@@ -9,8 +9,15 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-public class ClienteJava {
 
+/**
+ * Esta clase simula un clinte simplemente para probar la respuesta al realizar peticiones al servidor principal y al servidor de fachada
+ */
+
+public class ClienteJava {
+	/**
+     * Este metodo simplemnete realiza pruebas a los servidores principal y de fachada por medio de peticiones get y ver en consola lo que se retorna al realizar estas peticiones
+     */
 
 		public static void main( String[] args )
 	    {

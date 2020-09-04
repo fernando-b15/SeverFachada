@@ -12,23 +12,39 @@ import spark.Request;
 import spark.Response;
 
 /**
- * Hello world!
+ * Esta clase es la clase de inicio de un server fachada que para realizar los calculos se conecta a otro server principal quien realiza los calculos
  *
  */
 public class App 
 {
+	/**
+     * Este metodo main inicia el servidor Fachada y define algunas peticiones y respuestas haciendo uso 
+     * de algunas funciones lambda
+     */
+	
 	public static void main( String[] args )
     {
     	port(getPort());
     	get("/", (req, res) ->  inputView(req, res));
     	get("/respuesta", (req, res) ->  resultsView(req, res));
     }
+	/**
+     *Este metodo se encarga de retonar el puerto por defecto que esta definido en una variable de entorno 
+     *para correr el servidor web fachada sobre ese puerto.
+     */
 	 private static int getPort() {
 	   	 if (System.getenv("PORT") != null) {
 	   		 return Integer.parseInt(System.getenv("PORT"));
 	   	 }
 	   	 return 7000; //returns default port if heroku-port isn't set
 	 }
+	 /**
+	    *Este metodo contruye la vista inputView apartir del string html view que retorna  
+	    *
+	    * @param req Tiene la informacion de la peticion que llega al servidor.
+	    * @param res Tiene la informacion con la respuesta del servidor.
+	    * @return String con la informacion html de la vista de entrada.
+	    */
 	 private static String  inputView(Request req, Response res) {
 		    String view = "<!DOCTYPE html>"
 		            + "<html>"
@@ -51,6 +67,15 @@ public class App
 		            + "</html>";
 		    return view;
 			}
+	 /**
+	    *Este metodo contruye la vista resultView apartir una peticion que le solicita a otro server principal y simplemente retorna
+	    *la respuesta que el server principal le respondio ya que el server principal ya se encargo de realizar los calculos en base a los datos que contenia
+	    *la peticion de entrada de la funcion 
+	    *
+	    * @param req Tiene la informacion de la peticinn que llega al servidor.
+	    * @param res Tiene la informacinn con la respuesta del servidor.
+	    * @return String con la informacion html de la vista de entrada.
+	    */
 	 private static String  resultsView(Request req, Response res) {
 		 String view="";
 		 try {
