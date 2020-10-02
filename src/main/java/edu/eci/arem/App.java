@@ -3,11 +3,24 @@ package edu.eci.arem;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+
 import static spark.Spark.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import edu.eci.arem.reader.URLReader;
+import spark.Filter;
 import spark.Request;
 import spark.Response;
 
@@ -21,22 +34,49 @@ public class App
      * Este metodo main inicia el servidor Fachada y define algunas peticiones y respuestas haciendo uso 
      * de algunas funciones lambda
      */
-	
-	public static void main( String[] args )
+	private static Map<String, String> userdates = new HashMap<>();
+	public static void main( String[] args ) throws NoSuchAlgorithmException
     {
     	port(getPort());
-    	get("/", (req, res) ->  inputView(req, res));
+    	userdates.put("fernando",encode("holi123"));
+    	userdates.put("admin",encode("admin"));
+    	secure("keystores/ecikeystore.p12","123456","keystores/myTrustStore", "789456");
+    	get("/", (req, res) ->  loginView(req, res));
+    	post("/home", (req, res) ->  inputView(req, res));
+    	before("/home",new Filter() {
+            @Override
+            public void handle(Request request, Response response) throws NoSuchAlgorithmException {
+                String user = request.queryParams("user");
+                String password = encode(request.queryParams("password"));
+                System.out.println(user);
+                System.out.println(password);
+                if (!(userdates.containsKey(user) && password.equals(userdates.get(user)))) {
+                    halt(401, "You are NOT welcome here!!!");
+                }
+            }
+        });
     	get("/respuesta", (req, res) ->  resultsView(req, res));
+    	after("/home", (request, response) -> {
+            response.header("spark", "added by after-filter");
+        });
     }
 	/**
      *Este metodo se encarga de retonar el puerto por defecto que esta definido en una variable de entorno 
      *para correr el servidor web fachada sobre ese puerto.
      */
+	 public static String encode(String text) throws NoSuchAlgorithmException {
+		 MessageDigest md = MessageDigest.getInstance( "SHA-256" );
+	     md.update( text.getBytes( StandardCharsets.UTF_8 ) );
+	     byte[] digest = md.digest();
+	     String hex = String.format( "%064x", new BigInteger( 1, digest ) );
+	     return  hex;
+		 
+	 }  
 	 private static int getPort() {
 	   	 if (System.getenv("PORT") != null) {
 	   		 return Integer.parseInt(System.getenv("PORT"));
 	   	 }
-	   	 return 7000; //returns default port if heroku-port isn't set
+	   	 return 5000; //returns default port if heroku-port isn't set
 	 }
 	 /**
 	    *Este metodo contruye la vista inputView apartir del string html view que retorna  
@@ -45,6 +85,30 @@ public class App
 	    * @param res Tiene la informacion con la respuesta del servidor.
 	    * @return String con la informacion html de la vista de entrada.
 	    */
+	 
+	 private static String  loginView(Request req, Response res){
+	        String view = "";
+
+	        view = "<!DOCTYPE html>"
+	                + "<html>"
+	                +"<body style=\"background-color:#3374FF;\">"
+	                +"<center>"
+	                +"<h1>Welcome Login Server Fachada</h1>"
+	                +"<br/>"
+	                +"<h2>Por favor loguese para acceder al servicio</h2>"
+	                +"<form name='loginForm' method='post' action='/home'>"
+	                +"Usuario:<input type='text' name='user'/> <br/>"
+	                + "<br><br>"
+	                +"Contraseña:<input type='password' name='password'/> <br/>"
+	                + "<br><br>"
+	                +"<input type='submit' value='Login' />"
+	                +"</form>"
+	                +"</center>"
+	                + "</body>"
+	                + "</html>";
+
+	        return view;
+	    }
 	 private static String  inputView(Request req, Response res) {
 		    String view = "<!DOCTYPE html>"
 		            + "<html>"
@@ -79,18 +143,25 @@ public class App
 	 private static String  resultsView(Request req, Response res) {
 		 String view="";
 		 try {
-			URL url = new URL("https://parcialarepserver.herokuapp.com/respuesta?funcion="+req.queryParams("funcion")+"&datos="+req.queryParams("datos"));
-			BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
-			String inputLine;
-			while ((inputLine = reader.readLine()) != null) {
-	                System.out.println(inputLine);
-	                view+=inputLine;
-	        }
+			view = URLReader.Reader(req.queryParams("funcion"), req.queryParams("datos"));
+			System.out.println("alfa       "+view);
 			
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (KeyManagementException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (KeyStoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (CertificateException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
